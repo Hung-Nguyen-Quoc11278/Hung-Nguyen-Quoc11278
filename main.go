@@ -9,7 +9,6 @@ import (
 	"github.com/notnil/chess"
 )
 
-// GameState lưu trữ trạng thái bàn cờ và người chơi gần nhất
 type GameState struct {
 	FEN        string `json:"fen"`
 	LastPlayer string `json:"last_player"`
@@ -30,7 +29,7 @@ func main() {
 	inputArg := os.Args[1] // Ví dụ: "Chess: e4"
 	player := "Local Player"
 	if len(os.Args) >= 3 {
-		player = os.Args[2] // Lấy tên GitHub user từ arguments
+		player = os.Args[2]
 	}
 
 	parts := strings.Split(inputArg, ":")
@@ -40,10 +39,10 @@ func main() {
 	}
 	moveStr := strings.TrimSpace(parts[1])
 
-	// 1. Tải trạng thái game hiện tại
+	// 1. Tải trạng thái game hiện tại từ state.json
 	game, _ := loadGame()
 
-	// 2. Xử lý nước đi
+	// 2. Validate và tìm nước đi hợp lệ
 	var move *chess.Move
 	var err error
 
@@ -58,8 +57,9 @@ func main() {
 		}
 	}
 
+	// Nếu nước đi lỗi, báo lỗi và THOÁT NGAY, tuyệt đối không lưu hay thay đổi state
 	if err != nil || move == nil {
-		fmt.Printf("Nước đi không hợp lệ (%s): %v\n", moveStr, err)
+		fmt.Printf("Nước đi không hợp lệ hoặc sai lượt (%s): %v\n", moveStr, err)
 		os.Exit(1)
 	}
 
@@ -69,10 +69,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	// 3. Lưu trạng thái mới kèm tên người chơi
+	// 3. Chỉ khi nước đi hợp lệ mới tiến hành lưu trạng thái mới và sinh file
 	saveGame(game, player)
-
-	// 4. Sinh file SVG và cập nhật README
 	generateSVGBoard(game, SvgFile)
 	updateReadme(game, player)
 

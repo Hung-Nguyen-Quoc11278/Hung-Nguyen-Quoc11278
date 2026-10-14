@@ -22,13 +22,13 @@ jobs:
 
       - name: Run Go Chess Engine
         run: |
-          go run main.go "${{ github.event.issue.title }}"
+          go run main.go "${{ github.event.issue.title }}" "${{ github.event.issue.user.login }}"
 
       - name: Commit and push changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add README.md state.json
+          git add README.md state.json board.svg
           git commit -m "Chess move: ${{ github.event.issue.title }}" || exit 0
           git push
 
@@ -43,13 +43,3 @@ jobs:
               state: 'closed',
               state_reason: 'completed'
             })
-      - name: Commit and push changes
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add README.md state.json board.svg
-          git commit -m "Chess move: ${{ github.event.issue.title }}" || exit 0
-          git push
-      - name: Run Go Chess Engine
-        run: |
-          go run main.go "${{ github.event.issue.title }}" "${{ github.event.issue.user.login }}"
