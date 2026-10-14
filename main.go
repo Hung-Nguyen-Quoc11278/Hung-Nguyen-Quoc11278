@@ -26,7 +26,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	inputArg := os.Args[1] // Ví dụ: "Chess: reset" hoặc "Chess: e4"
+	inputArg := os.Args[1]
 	player := "Local Player"
 	if len(os.Args) >= 3 {
 		player = os.Args[2]
@@ -39,12 +39,12 @@ func main() {
 	}
 	command := strings.TrimSpace(strings.ToLower(parts[1]))
 
-	// Kiểm tra nếu người dùng muốn RESET trận cờ
+	// Xử lý khi người dùng yêu cầu reset trận cờ
 	if command == "reset" {
 		game := chess.NewGame()
-		saveGame(game, "Chưa có (Đã reset)")
+		saveGame(game, "Chua_Co")
 		generateSVGBoard(game, SvgFile)
-		updateReadme(game, "Chưa có (Đã reset)")
+		updateReadme(game, "Chua_Co")
 		fmt.Println("Đã reset bàn cờ về trạng thái ban đầu thành công!")
 		return
 	}
@@ -52,12 +52,11 @@ func main() {
 	// 1. Tải trạng thái game hiện tại từ state.json
 	game, _ := loadGame()
 
-	// 2. Validate nước đi cực kỳ nghiêm ngặt theo danh sách ValidMoves thực tế của cờ vua
+	// 2. Validate nước đi cực kỳ nghiêm ngặt theo danh sách ValidMoves thực tế
 	var move *chess.Move
 	validMoves := game.ValidMoves()
 	moveStr := strings.TrimSpace(parts[1])
 
-	// Thử so khớp theo chuẩn UCI
 	for _, m := range validMoves {
 		if m.String() == moveStr || m.String() == strings.ReplaceAll(moveStr, "-", "") {
 			move = m
@@ -65,7 +64,6 @@ func main() {
 		}
 	}
 
-	// Nếu chưa khớp, thử giải mã theo Algebraic Notation (SAN)
 	if move == nil {
 		decodedMove, decodeErr := chess.AlgebraicNotation{}.Decode(game.Position(), moveStr)
 		if decodeErr == nil && decodedMove != nil {
@@ -78,7 +76,6 @@ func main() {
 		}
 	}
 
-	// Nếu nước đi không hợp lệ hoặc phạm luật, báo lỗi và THOÁT NGAY
 	if move == nil {
 		fmt.Printf("Nước đi không hợp lệ hoặc phạm luật theo bàn cờ hiện tại (%s)\n", moveStr)
 		os.Exit(1)
@@ -119,8 +116,8 @@ func loadGame() (*chess.Game, string) {
 	}
 
 	lastPlayer := state.LastPlayer
-	if lastPlayer == "" {
-		lastPlayer = "Chưa có"
+	if lastPlayer == "" || lastPlayer == "Chua_Co" {
+		return chess.NewGame(), "Chưa có"
 	}
 
 	return chess.NewGame(fenFunc), lastPlayer
@@ -252,12 +249,17 @@ func updateReadme(game *chess.Game, lastPlayer string) {
 
 	historyStr := formatMoveHistory(game)
 
+	playerDisplay := "Chưa có"
+	if lastPlayer != "" && lastPlayer != "Chua_Co" {
+		playerDisplay = fmt.Sprintf("[@`%s`](https://github.com/%s)", lastPlayer, lastPlayer)
+	}
+
 	content := "# Chào mừng bạn đến với Profile của tôi! 🚀\n\n" +
 		"## ♟️ Trợ thủ Cờ vua trực tiếp trên README\n\n" +
 		"Tạo một **Issue** mới với tiêu đề dạng `Chess: <nước_đi>` (ví dụ: `Chess: e4`, `Chess: e2e4`) hoặc `Chess: reset` để làm mới bàn cờ!\n\n" +
 		"### Trạng thái ván đấu:\n" +
 		"- **Lượt đi:** " + turn + "\n" +
-		"- **Người chơi gần nhất:** 👤 [@`" + lastPlayer + "`](https://github.com/" + lastPlayer + ")\n" +
+		"- **Người chơi gần nhất:** 👤 " + playerDisplay + "\n" +
 		"- **Tình trạng:** " + statusStr + "\n\n" +
 		"### Bàn cờ hiện tại:\n\n" +
 		"<p align=\"center\">\n" +
