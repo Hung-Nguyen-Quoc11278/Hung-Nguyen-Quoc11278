@@ -169,6 +169,7 @@ func generateSVGBoard(game *chess.Game, filename string) {
 	files := []string{"A", "B", "C", "D", "E", "F", "G", "H"}
 	ranks := []string{"8", "7", "6", "5", "4", "3", "2", "1"}
 
+	// Vẽ các ô vuông bàn cờ
 	for r := 0; r < 8; r++ {
 		for f := 0; f < 8; f++ {
 			x := offset + f*tileSize
@@ -181,6 +182,7 @@ func generateSVGBoard(game *chess.Game, filename string) {
 		}
 	}
 
+	// Vẽ nhãn chữ cái và số tọa độ biên
 	for i := 0; i < 8; i++ {
 		svg.WriteString(fmt.Sprintf(`<text x="%d" y="%d" class="label" text-anchor="middle">%s</text>`, offset+i*tileSize+tileSize/2, 25, files[i]))
 		svg.WriteString(fmt.Sprintf(`<text x="%d" y="%d" class="label" text-anchor="middle">%s</text>`, offset+i*tileSize+tileSize/2, offset+8*tileSize+25, files[i]))
@@ -188,19 +190,26 @@ func generateSVGBoard(game *chess.Game, filename string) {
 		svg.WriteString(fmt.Sprintf(`<text x="%d" y="%d" class="label" dominant-baseline="middle">%s</text>`, offset+8*tileSize+12, offset+i*tileSize+tileSize/2, ranks[i]))
 	}
 
+	// Vẽ các quân cờ dựa trên chuẩn tọa độ từ hàng 7 xuống 0 (tương ứng từ rank 8 về rank 1)
 	for r := 0; r < 8; r++ {
 		for f := 0; f < 8; f++ {
-			sq := chess.Square((7-r)*8 + f)
+			// Hàng 0 trong vòng lặp tương ứng với rank 8 (chỉ số 7 trong hệ thống cờ vua), hàng 7 tương ứng với rank 1 (chỉ số 0)
+			rankIdx := 7 - r
+			fileIdx := f
+			sq := chess.Square(rankIdx*8 + fileIdx)
+
 			piece := board.Piece(sq)
 			if piece != chess.NoPiece {
 				x := offset + f*tileSize + tileSize/2
 				y := offset + r*tileSize + tileSize/2
 				unicodeChar := pieceUnicode[piece]
 
+				// Hiệu ứng bóng đổ nhẹ cho quân cờ
 				svg.WriteString(fmt.Sprintf(`<text x="%d" y="%d" class="piece" fill="rgba(0,0,0,0.3)">%s</text>`, x+1, y+2, unicodeChar))
-				fillColor := "#ececec"
+
+				fillColor := "#ececec" // Màu cho quân trắng
 				if piece.Color() == chess.Black {
-					fillColor = "#1a1a1a"
+					fillColor = "#1a1a1a" // Màu cho quân đen
 				}
 				svg.WriteString(fmt.Sprintf(`<text x="%d" y="%d" class="piece" fill="%s">%s</text>`, x, y, fillColor, unicodeChar))
 			}
