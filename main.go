@@ -22,11 +22,11 @@ const (
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Sử dụng: go run main.go 'Chess: <nước_đi>' [tên_người_chơi]")
+		fmt.Println("Sử dụng: go run main.go 'Chess: <nước_đi_hoặc_reset>' [tên_người_chơi]")
 		os.Exit(1)
 	}
 
-	inputArg := os.Args[1] // Ví dụ: "Chess: e4"
+	inputArg := os.Args[1] // Ví dụ: "Chess: reset" hoặc "Chess: e4"
 	player := "Local Player"
 	if len(os.Args) >= 3 {
 		player = os.Args[2]
@@ -37,39 +37,59 @@ func main() {
 		fmt.Println("Định dạng đầu vào không hợp lệ.")
 		os.Exit(1)
 	}
-	moveStr := strings.TrimSpace(parts[1])
+	command := strings.TrimSpace(strings.ToLower(parts[1]))
+
+	// Kiểm tra nếu người dùng muốn RESET trận cờ
+	if command == "reset" {
+		game := chess.NewGame()
+		saveGame(game, "Chưa có (Đã reset)")
+		generateSVGBoard(game, SvgFile)
+		updateReadme(game, "Chưa có (Đã reset)")
+		fmt.Println("Đã reset bàn cờ về trạng thái ban đầu thành công!")
+		return
+	}
 
 	// 1. Tải trạng thái game hiện tại từ state.json
 	game, _ := loadGame()
 
-	// 2. Validate và tìm nước đi hợp lệ
+	// 2. Validate nước đi cực kỳ nghiêm ngặt theo danh sách ValidMoves thực tế của cờ vua
 	var move *chess.Move
-	var err error
+	validMoves := game.ValidMoves()
+	moveStr := strings.TrimSpace(parts[1])
 
-	move, err = chess.AlgebraicNotation{}.Decode(game.Position(), moveStr)
-	if err != nil {
-		for _, m := range game.ValidMoves() {
-			if m.String() == moveStr {
-				move = m
-				err = nil
-				break
+	// Thử so khớp theo chuẩn UCI hoặc chuẩn thay thế
+	for _, m := range validMoves {
+		if m.String() == moveStr || m.String() == strings.ReplaceAll(moveStr, "-", "") {
+			move = m
+			break
+		}
+	}
+
+	// Nếu chưa khớp, thử giải mã theo Algebraic Notation (SAN) rồi đối chiếu lại
+	if move == nil {
+		if decodedMove, err := chess.AlgebraicNotation{}.Decode(game.Position(), moveStr); err == nil {
+			for _, m := range validMoves {
+				if m.String() == decodedMove.String() {
+					move = m
+					break
+				}
 			}
 		}
 	}
 
-	// Nếu nước đi lỗi, báo lỗi và THOÁT NGAY, tuyệt đối không lưu hay thay đổi state
-	if err != nil || move == nil {
-		fmt.Printf("Nước đi không hợp lệ hoặc sai lượt (%s): %v\n", moveStr, err)
+	// Nếu nước đi không hợp lệ hoặc phạm luật, báo lỗi và THOÁT NGAY (không làm bẩn state)
+	if move == nil {
+		fmt.Printf("Nước đi không hợp lệ hoặc phạm luật theo bàn cờ hiện tại (%s)\n", moveStr)
 		os.Exit(1)
 	}
 
-	err = game.Move(move)
+	err := game.Move(move)
 	if err != nil {
 		fmt.Printf("Không thể thực hiện nước đi (%s): %v\n", moveStr, err)
 		os.Exit(1)
 	}
 
-	// 3. Chỉ khi nước đi hợp lệ mới tiến hành lưu trạng thái mới và sinh file
+	// 3. Chỉ lưu trạng thái khi nước đi hợp lệ
 	saveGame(game, player)
 	generateSVGBoard(game, SvgFile)
 	updateReadme(game, player)
@@ -233,7 +253,7 @@ func updateReadme(game *chess.Game, lastPlayer string) {
 
 	content := "# Chào mừng bạn đến với Profile của tôi! 🚀\n\n" +
 		"## ♟️ Trợ thủ Cờ vua trực tiếp trên README\n\n" +
-		"Tạo một **Issue** mới với tiêu đề dạng `Chess: <nước_đi>` (ví dụ: `Chess: e4` hoặc `Chess: e2e4`) để thực hiện nước đi tiếp theo!\n\n" +
+		"Tạo một **Issue** mới với tiêu đề dạng `Chess: <nước_đi>` (ví dụ: `Chess: e4`, `Chess: e2e4`) hoặc `Chess: reset` để làm mới bàn cờ!\n\n" +
 		"### Trạng thái ván đấu:\n" +
 		"- **Lượt đi:** " + turn + "\n" +
 		"- **Người chơi gần nhất:** 👤 [@`" + lastPlayer + "`](https://github.com/" + lastPlayer + ")\n" +
