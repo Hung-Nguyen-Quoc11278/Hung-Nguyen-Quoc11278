@@ -9,9 +9,9 @@ Tạo một **Issue** mới với tiêu đề dạng `Chess: <nước_đi>` (ví
 
  A B C D E F G H
 8♜ ♞ ♝ ♛ ♚ ♝ ♞ ♜ 
-7♟ ♟ ♟ ♟ ♟ ♟ ♟ ♟ 
+7♟ - ♟ ♟ ♟ ♟ ♟ ♟ 
 6- - - - - - - - 
-5- - - - - - - - 
+5- ♟ - - - - - - 
 4- - - - ♙ - - - 
 3- - - - - - - - 
 2♙ ♙ ♙ ♙ - ♙ ♙ ♙ 
@@ -19,7 +19,7 @@ Tạo một **Issue** mới với tiêu đề dạng `Chess: <nước_đi>` (ví
 
 ```
 
-**FEN hiện tại:** `rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1`
+**FEN hiện tại:** `rnbqkbnr/p1pppppp/8/1p6/4P3/8/PPPP1PPP/RNBQKBNR w KQkq b6 0 2`
 
 ---
 *Được vận hành tự động bởi **Golang** & **GitHub Actions**.*
