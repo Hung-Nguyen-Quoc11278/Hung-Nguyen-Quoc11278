@@ -6,7 +6,7 @@ Tạo một **Issue** mới với tiêu đề dạng `Chess: <nước_đi>` (ví
 
 ### Trạng thái ván đấu:
 - **Lượt đi:** ⚪ Quân Trắng (White)
-- **Người chơi gần nhất:** 👤 [@`Chưa có (Đã reset)`](https://github.com/Chưa có (Đã reset))
+- **Người chơi gần nhất:** 👤 Chưa có
 - **Tình trạng:** Đang diễn ra
 
 ### Bàn cờ hiện tại:
