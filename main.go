@@ -182,7 +182,6 @@ func generateSVGBoard(game *chess.Game, filename string) {
 	_ = os.WriteFile(filename, []byte(svg.String()), 0644)
 }
 
-// formatMoveHistory định dạng danh sách nước đi thành chuỗi theo cặp Trắng - Đen
 func formatMoveHistory(game *chess.Game) string {
 	moves := game.Moves()
 	if len(moves) == 0 {
@@ -207,13 +206,17 @@ func updateReadme(game *chess.Game) {
 		turn = "⚫ Quân Đen (Black)"
 	}
 
-	// Kiểm tra trạng thái ván đấu (chiếu, hòa, chiếu bí)
+	// Kiểm tra trạng thái ván đấu thông qua Outcome
 	statusStr := "Đang diễn ra"
-	method := game.Method()
-	if method == chess.Checkmate {
-		statusStr = "🏆 Chiếu bí! Ván đấu kết thúc."
-	} else if method == chess.Stalemate || method == chess.DrawAgreement {
-		statusStr = "🤝 Hòa!"
+	outcome := game.Outcome()
+	if outcome != chess.NoOutcome {
+		if outcome == chess.WhiteWon {
+			statusStr = "🏆 Trắng thắng (White Win)!"
+		} else if outcome == chess.BlackWon {
+			statusStr = "🏆 Đen thắng (Black Win)!"
+		} else if outcome == chess.Draw {
+			statusStr = "🤝 Ván đấu kết thúc với kết quả Hòa (Draw)!"
+		}
 	}
 
 	historyStr := formatMoveHistory(game)
