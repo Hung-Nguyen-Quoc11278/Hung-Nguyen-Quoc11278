@@ -9,9 +9,10 @@ import (
 	"github.com/notnil/chess"
 )
 
-// GameState lưu trữ trạng thái bàn cờ dưới dạng chuỗi FEN
+// GameState lưu trữ trạng thái bàn cờ và người chơi gần nhất
 type GameState struct {
-	FEN string `json:"fen"`
+	FEN        string `json:"fen"`
+	LastPlayer string `json:"last_player"`
 }
 
 const (
@@ -22,11 +23,15 @@ const (
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Sử dụng: go run main.go 'Chess: <nước_đi>'")
+		fmt.Println("Sử dụng: go run main.go 'Chess: <nước_đi>' [tên_người_chơi]")
 		os.Exit(1)
 	}
 
-	inputArg := os.Args[1] // Ví dụ: "Chess: e4" hoặc "Chess: e2e4"
+	inputArg := os.Args[1] // Ví dụ: "Chess: e4"
+	player := "Local Player"
+	if len(os.Args) >= 3 {
+		player = os.Args[2] // Lấy tên GitHub user từ arguments
+	}
 
 	parts := strings.Split(inputArg, ":")
 	if len(parts) < 2 {
@@ -35,8 +40,8 @@ func main() {
 	}
 	moveStr := strings.TrimSpace(parts[1])
 
-	// 1. Tải trạng thái game hiện tại từ state.json
-	game := loadGame()
+	// 1. Tải trạng thái game hiện tại
+	game, _ := loadGame()
 
 	// 2. Xử lý nước đi
 	var move *chess.Move
@@ -64,41 +69,49 @@ func main() {
 		os.Exit(1)
 	}
 
-	// 3. Lưu trạng thái mới
-	saveGame(game)
+	// 3. Lưu trạng thái mới kèm tên người chơi
+	saveGame(game, player)
 
-	// 4. Sinh file SVG và cập nhật README kèm lịch sử ván đấu
+	// 4. Sinh file SVG và cập nhật README
 	generateSVGBoard(game, SvgFile)
-	updateReadme(game)
+	updateReadme(game, player)
 
-	fmt.Printf("Thực hiện thành công nước đi: %s\n", moveStr)
+	fmt.Printf("Thực hiện thành công nước đi: %s bởi @%s\n", moveStr, player)
 }
 
-func loadGame() *chess.Game {
+func loadGame() (*chess.Game, string) {
 	if _, err := os.Stat(StateFile); os.IsNotExist(err) {
-		return chess.NewGame()
+		return chess.NewGame(), "Chưa có"
 	}
 
 	data, err := os.ReadFile(StateFile)
 	if err != nil {
-		return chess.NewGame()
+		return chess.NewGame(), "Chưa có"
 	}
 
 	var state GameState
 	if err := json.Unmarshal(data, &state); err != nil || state.FEN == "" {
-		return chess.NewGame()
+		return chess.NewGame(), "Chưa có"
 	}
 
 	fenFunc, err := chess.FEN(state.FEN)
 	if err != nil {
-		return chess.NewGame()
+		return chess.NewGame(), state.LastPlayer
 	}
 
-	return chess.NewGame(fenFunc)
+	lastPlayer := state.LastPlayer
+	if lastPlayer == "" {
+		lastPlayer = "Chưa có"
+	}
+
+	return chess.NewGame(fenFunc), lastPlayer
 }
 
-func saveGame(game *chess.Game) {
-	state := GameState{FEN: game.FEN()}
+func saveGame(game *chess.Game, lastPlayer string) {
+	state := GameState{
+		FEN:        game.FEN(),
+		LastPlayer: lastPlayer,
+	}
 	data, _ := json.MarshalIndent(state, "", "  ")
 	_ = os.WriteFile(StateFile, data, 0644)
 }
@@ -199,14 +212,13 @@ func formatMoveHistory(game *chess.Game) string {
 	return sb.String()
 }
 
-func updateReadme(game *chess.Game) {
+func updateReadme(game *chess.Game, lastPlayer string) {
 	fen := game.FEN()
 	turn := "⚪ Quân Trắng (White)"
 	if game.Position().Turn() == chess.Black {
 		turn = "⚫ Quân Đen (Black)"
 	}
 
-	// Kiểm tra trạng thái ván đấu thông qua Outcome
 	statusStr := "Đang diễn ra"
 	outcome := game.Outcome()
 	if outcome != chess.NoOutcome {
@@ -226,6 +238,7 @@ func updateReadme(game *chess.Game) {
 		"Tạo một **Issue** mới với tiêu đề dạng `Chess: <nước_đi>` (ví dụ: `Chess: e4` hoặc `Chess: e2e4`) để thực hiện nước đi tiếp theo!\n\n" +
 		"### Trạng thái ván đấu:\n" +
 		"- **Lượt đi:** " + turn + "\n" +
+		"- **Người chơi gần nhất:** 👤 [@`" + lastPlayer + "`](https://github.com/" + lastPlayer + ")\n" +
 		"- **Tình trạng:** " + statusStr + "\n\n" +
 		"### Bàn cờ hiện tại:\n\n" +
 		"<p align=\"center\">\n" +
