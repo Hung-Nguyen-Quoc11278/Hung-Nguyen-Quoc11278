@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/notnil/chess"
 )
@@ -169,7 +170,6 @@ func generateSVGBoard(game *chess.Game, filename string) {
 	files := []string{"A", "B", "C", "D", "E", "F", "G", "H"}
 	ranks := []string{"8", "7", "6", "5", "4", "3", "2", "1"}
 
-	// Vẽ các ô vuông bàn cờ
 	for r := 0; r < 8; r++ {
 		for f := 0; f < 8; f++ {
 			x := offset + f*tileSize
@@ -182,7 +182,6 @@ func generateSVGBoard(game *chess.Game, filename string) {
 		}
 	}
 
-	// Vẽ nhãn chữ cái và số tọa độ biên
 	for i := 0; i < 8; i++ {
 		svg.WriteString(fmt.Sprintf(`<text x="%d" y="%d" class="label" text-anchor="middle">%s</text>`, offset+i*tileSize+tileSize/2, 25, files[i]))
 		svg.WriteString(fmt.Sprintf(`<text x="%d" y="%d" class="label" text-anchor="middle">%s</text>`, offset+i*tileSize+tileSize/2, offset+8*tileSize+25, files[i]))
@@ -190,10 +189,8 @@ func generateSVGBoard(game *chess.Game, filename string) {
 		svg.WriteString(fmt.Sprintf(`<text x="%d" y="%d" class="label" dominant-baseline="middle">%s</text>`, offset+8*tileSize+12, offset+i*tileSize+tileSize/2, ranks[i]))
 	}
 
-	// Vẽ các quân cờ dựa trên chuẩn tọa độ từ hàng 7 xuống 0 (tương ứng từ rank 8 về rank 1)
 	for r := 0; r < 8; r++ {
 		for f := 0; f < 8; f++ {
-			// Hàng 0 trong vòng lặp tương ứng với rank 8 (chỉ số 7 trong hệ thống cờ vua), hàng 7 tương ứng với rank 1 (chỉ số 0)
 			rankIdx := 7 - r
 			fileIdx := f
 			sq := chess.Square(rankIdx*8 + fileIdx)
@@ -204,12 +201,11 @@ func generateSVGBoard(game *chess.Game, filename string) {
 				y := offset + r*tileSize + tileSize/2
 				unicodeChar := pieceUnicode[piece]
 
-				// Hiệu ứng bóng đổ nhẹ cho quân cờ
 				svg.WriteString(fmt.Sprintf(`<text x="%d" y="%d" class="piece" fill="rgba(0,0,0,0.3)">%s</text>`, x+1, y+2, unicodeChar))
 
-				fillColor := "#ececec" // Màu cho quân trắng
+				fillColor := "#ececec"
 				if piece.Color() == chess.Black {
-					fillColor = "#1a1a1a" // Màu cho quân đen
+					fillColor = "#1a1a1a"
 				}
 				svg.WriteString(fmt.Sprintf(`<text x="%d" y="%d" class="piece" fill="%s">%s</text>`, x, y, fillColor, unicodeChar))
 			}
@@ -263,6 +259,9 @@ func updateReadme(game *chess.Game, lastPlayer string) {
 		playerDisplay = fmt.Sprintf("[@`%s`](https://github.com/%s)", lastPlayer, lastPlayer)
 	}
 
+	// Thêm timestamp động (?t=...) để ép GitHub làm mới cache ảnh SVG ngay lập tức
+	timestamp := time.Now().Unix()
+
 	content := "# Chào mừng bạn đến với Profile của tôi! 🚀\n\n" +
 		"## ♟️ Trợ thủ Cờ vua trực tiếp trên README\n\n" +
 		"Tạo một **Issue** mới với tiêu đề dạng `Chess: <nước_đi>` (ví dụ: `Chess: e4`, `Chess: e2e4`) hoặc `Chess: reset` để làm mới bàn cờ!\n\n" +
@@ -272,7 +271,7 @@ func updateReadme(game *chess.Game, lastPlayer string) {
 		"- **Tình trạng:** " + statusStr + "\n\n" +
 		"### Bàn cờ hiện tại:\n\n" +
 		"<p align=\"center\">\n" +
-		"  <img src=\"board.svg\" width=\"400\" alt=\"Chess Board\">\n" +
+		fmt.Sprintf("  <img src=\"board.svg?t=%d\" width=\"400\" alt=\"Chess Board\">\n", timestamp) +
 		"</p>\n\n" +
 		"### 📜 Lịch sử nước đi:\n" +
 		"```text\n" + historyStr + "\n```\n\n" +
