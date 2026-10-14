@@ -57,7 +57,7 @@ func main() {
 	validMoves := game.ValidMoves()
 	moveStr := strings.TrimSpace(parts[1])
 
-	// Thử so khớp theo chuẩn UCI hoặc chuẩn thay thế
+	// Thử so khớp theo chuẩn UCI
 	for _, m := range validMoves {
 		if m.String() == moveStr || m.String() == strings.ReplaceAll(moveStr, "-", "") {
 			move = m
@@ -65,9 +65,10 @@ func main() {
 		}
 	}
 
-	// Nếu chưa khớp, thử giải mã theo Algebraic Notation (SAN) rồi đối chiếu lại
+	// Nếu chưa khớp, thử giải mã theo Algebraic Notation (SAN)
 	if move == nil {
-		if decodedMove, err := chess.AlgebraicNotation{}.Decode(game.Position(), moveStr); err == nil {
+		decodedMove, decodeErr := chess.AlgebraicNotation{}.Decode(game.Position(), moveStr)
+		if decodeErr == nil && decodedMove != nil {
 			for _, m := range validMoves {
 				if m.String() == decodedMove.String() {
 					move = m
@@ -77,7 +78,7 @@ func main() {
 		}
 	}
 
-	// Nếu nước đi không hợp lệ hoặc phạm luật, báo lỗi và THOÁT NGAY (không làm bẩn state)
+	// Nếu nước đi không hợp lệ hoặc phạm luật, báo lỗi và THOÁT NGAY
 	if move == nil {
 		fmt.Printf("Nước đi không hợp lệ hoặc phạm luật theo bàn cờ hiện tại (%s)\n", moveStr)
 		os.Exit(1)
