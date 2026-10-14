@@ -25,7 +25,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	inputArg := os.Args[1] // Ví dụ: "Chess: e2e4"
+	inputArg := os.Args[1] // Ví dụ: "Chess: e2e4" hoặc "Chess: e4"
 
 	// Tách lấy chuỗi nước đi phía sau chữ "Chess:"
 	parts := strings.Split(inputArg, ":")
@@ -38,10 +38,31 @@ func main() {
 	// 1. Tải trạng thái game hiện tại từ state.json (hoặc tạo ván mới nếu chưa có)
 	game := loadGame()
 
-	// 2. Thực hiện nước đi người chơi vừa nhập
-	err := game.MoveStr(moveStr)
+	// 2. Thực hiện nước đi người chơi vừa nhập (hỗ trợ cả SAN lẫn UCI)
+	var move *chess.Move
+	var err error
+
+	// Thử parse theo chuẩn Algebraic Notation (ví dụ: e4, Nf3, O-O)
+	move, err = chess.AlgebraicNotation{}.Decode(game.Position(), moveStr)
 	if err != nil {
+		// Nếu lỗi, thử tìm trong danh sách các nước đi hợp lệ khớp với chuỗi UCI (ví dụ: e2e4)
+		for _, m := range game.ValidMoves() {
+			if m.String() == moveStr {
+				move = m
+				err = nil
+				break
+			}
+		}
+	}
+
+	if err != nil || move == nil {
 		fmt.Printf("Nước đi không hợp lệ (%s): %v\n", moveStr, err)
+		os.Exit(1)
+	}
+
+	err = game.Move(move)
+	if err != nil {
+		fmt.Printf("Không thể thực hiện nước đi (%s): %v\n", moveStr, err)
 		os.Exit(1)
 	}
 
@@ -92,7 +113,7 @@ func updateReadme(game *chess.Game) {
 
 	content := "# Chào mừng bạn đến với Profile của tôi! 🚀\n\n" +
 		"## ♟️ Trò chơi Cờ vua trực tiếp trên README\n\n" +
-		"Tạo một **Issue** mới với tiêu đề dạng `Chess: <nước_đi>` (ví dụ: `Chess: e2e4`) để thực hiện nước đi tiếp theo!\n\n" +
+		"Tạo một **Issue** mới với tiêu đề dạng `Chess: <nước_đi>` (ví dụ: `Chess: e2e4` hoặc `Chess: e4`) để thực hiện nước đi tiếp theo!\n\n" +
 		"### Bàn cờ hiện tại:\n" +
 		"```text\n" + boardStr + "\n```\n\n" +
 		"**FEN hiện tại:** `" + fen + "`\n\n" +
